@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cadastro de Slides</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <nav>
+    <h1>Cadastro de Slides</h1>
+    <span id="navbar-data"></span>
+  </nav>
+
+  <main class="container">
+    <form id="formSlide">
+      <input id="assunto" type="text" placeholder="Assunto" required>
+      <textarea id="texto" placeholder="Texto" rows="4" required></textarea>
+      <button type="submit">Cadastrar</button>
+    </form>
+
+    <h2>Slides Cadastrados</h2>
+    <ul id="listaSlides" class="slides-list"></ul>
+    <button id="verMais" style="display:none;">Ver mais</button>
+    <div id="msg" class="msg"></div>
+  </main>
+
+  <script src="slides-client.js" defer></script>
+</body>
+</html>
