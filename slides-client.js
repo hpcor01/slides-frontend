@@ -1,5 +1,5 @@
 // 🔴 ALTERE esta URL depois do deploy do Render!
-const API = "https://YOUR_RENDER_URL.onrender.com/api/slides";
+const API = "https://slides-backend-hu6m.onrender.com";
 
 const form = document.getElementById("formSlide");
 const lista = document.getElementById("listaSlides");
@@ -76,3 +76,4 @@ form.addEventListener("submit", async (e) => {
 });
 
 document.addEventListener("DOMContentLoaded", carregarSlides);
+
