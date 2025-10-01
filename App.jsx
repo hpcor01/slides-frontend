@@ -16,7 +16,7 @@ export default function App() {
 
   async function carregarSlides() {
     try {
-      const res = await fetch(`${API_URL}/slides`);
+      const res = await fetch(`${API_URL}/`);
       if (!res.ok) throw new Error("Erro ao buscar slides");
       const data = await res.json();
       setSlides(data);
@@ -37,7 +37,7 @@ export default function App() {
     };
 
     try {
-      const res = await fetch(`${API_URL}/slides`, {
+      const res = await fetch(`${API_URL}/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(novoSlide)
@@ -99,3 +99,4 @@ export default function App() {
     </div>
   );
 }
+
