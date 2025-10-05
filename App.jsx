@@ -6,10 +6,11 @@ const API_URL = "https://slides-backend-hu6m.onrender.com";
 export default function App() {
   const [assunto, setAssunto] = useState("");
   const [texto, setTexto] = useState("");
+  const [autor, setAutor] = useState(""); // Campo autor adicional caso queira editar na tela
   const [slides, setSlides] = useState([]);
   const [mostrarTodos, setMostrarTodos] = useState(false);
 
-  // 🔹 Carregar slides ao iniciar
+  // Carregar slides ao iniciar
   useEffect(() => {
     carregarSlides();
   }, []);
@@ -30,10 +31,10 @@ export default function App() {
     if (!assunto || !texto) return alert("Preencha todos os campos!");
 
     const novoSlide = {
+      data: new Date().toISOString(),
       assunto,
       texto,
-      autor: "Autor Teste",
-      data: new Date().toISOString()
+      autor: autor || "Autor Teste"
     };
 
     try {
@@ -47,6 +48,7 @@ export default function App() {
 
       setAssunto("");
       setTexto("");
+      setAutor("");
       carregarSlides();
     } catch (err) {
       console.error("Erro:", err);
@@ -74,24 +76,32 @@ export default function App() {
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
         />
+        <input
+          type="text"
+          placeholder="Autor"
+          value={autor}
+          onChange={(e) => setAutor(e.target.value)}
+        />
         <button type="submit">Cadastrar</button>
       </form>
 
       <h2>Slides Cadastrados</h2>
       <ul className="lista-slides">
-        {slidesExibidos.map((colTema) => (
-          <li key={colTema._id}>
-            <strong>{colTema.assunto}</strong> <br />
-            {slide.texto} <br />
+        {slidesExibidos.map((item) => (
+          <li key={item._id}>
+            <strong>{item.slide.assunto}</strong> <br />
+            {item.slide.texto} <br />
             <small>
-              Autor: {colTema.autor} | Data:{" "}
-              {new Date(colTema.data).toLocaleString("pt-BR")}
+              Autor: {item.slide.autor} | Data:{" "}
+              {item.slide.data
+                ? new Date(item.slide.data).toLocaleString("pt-BR")
+                : ""}
             </small>
           </li>
         ))}
       </ul>
 
-      {colTema.length > 5 && (
+      {slides.length > 5 && (
         <button onClick={() => setMostrarTodos(!mostrarTodos)}>
           {mostrarTodos ? "Ver menos" : "Ver mais"}
         </button>
@@ -99,5 +109,3 @@ export default function App() {
     </div>
   );
 }
-
-
