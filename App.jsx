@@ -79,19 +79,19 @@ export default function App() {
 
       <h2>Slides Cadastrados</h2>
       <ul className="lista-slides">
-        {slidesExibidos.map((slide) => (
-          <li key={slide._id}>
-            <strong>{slide.assunto}</strong> <br />
+        {slidesExibidos.map((colTema) => (
+          <li key={colTema._id}>
+            <strong>{colTema.assunto}</strong> <br />
             {slide.texto} <br />
             <small>
-              Autor: {slide.autor} | Data:{" "}
-              {new Date(slide.data).toLocaleString("pt-BR")}
+              Autor: {colTema.autor} | Data:{" "}
+              {new Date(colTema.data).toLocaleString("pt-BR")}
             </small>
           </li>
         ))}
       </ul>
 
-      {slides.length > 5 && (
+      {colTema.length > 5 && (
         <button onClick={() => setMostrarTodos(!mostrarTodos)}>
           {mostrarTodos ? "Ver menos" : "Ver mais"}
         </button>
@@ -99,4 +99,5 @@ export default function App() {
     </div>
   );
 }
+
 
