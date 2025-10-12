@@ -1,8 +1,21 @@
 import React from "react";
-import ReactDOM from "react-dom/client";
-import App from "./App";
+import { createRoot } from "react-dom/client";
 
-ReactDOM.createRoot(document.getElementById("root")).render(
+// Ajuste o nome do import se você renomeou o arquivo SlidesList.example.jsx
+import SlidesList from "./SlidesList.example.jsx";
+
+// Importe seu CSS global (opcional)
+import "./Slides.css";
+
+function App() {
+  return (
+    <div className="app">
+      <SlidesList />
+    </div>
+  );
+}
+
+createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>
