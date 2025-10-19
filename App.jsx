@@ -1,156 +1,189 @@
 import React, { useState, useEffect } from "react";
 import "./Slides.css";
 
-const API_URL = "https://slides-backend-hu6m.onrender.com";
+const API = import.meta.env.VITE_API_URL || "https://slides-backend-hu6m.onrender.com";
+
+function Toast({ message, type }) {
+  if (!message) return null;
+  const bg = type === "success" ? "#2ecc71" : "#e74c3c";
+  return (
+    <div
+      style={{
+        position: "fixed",
+        right: 20,
+        top: 20,
+        padding: "10px 16px",
+        borderRadius: 6,
+        color: "#fff",
+        background: bg,
+        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+        zIndex: 9999,
+      }}
+    >
+      {message}
+    </div>
+  );
+}
 
 export default function App() {
-  const [assunto, setAssunto] = useState("");
-  const [texto, setTexto] = useState("");
-  const [autor, setAutor] = useState("");
   const [slides, setSlides] = useState([]);
-  const [mostrarTodos, setMostrarTodos] = useState(false);
-  const [carregando, setCarregando] = useState(true);
-  const [mensagem, setMensagem] = useState("");
-  const [expandidos, setExpandidos] = useState({}); // controla expandido por id
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [limit] = useState(10);
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({ data: "", assunto: "", texto: "", autor: "" });
+  const [toast, setToast] = useState({ message: "", type: "success" });
 
   useEffect(() => {
-    carregarSlides();
-  }, []);
+    carregarSlides(page);
+  }, [page]);
 
-  async function carregarSlides() {
-    setCarregando(true);
-    setMensagem("");
+  async function carregarSlides(p = 1) {
     try {
-      const res = await fetch(`${API_URL}/`);
-      if (!res.ok) throw new Error("Erro ao buscar slides");
+      setLoading(true);
+      const res = await fetch(`${API}/?page=${p}&limit=${limit}`);
       const data = await res.json();
-      setSlides(data);
+
+      // Caso o backend use formato paginado
+      if (data && data.success) {
+        setSlides(data.slides || []);
+        setTotalPages(data.totalPages || 1);
+        setPage(data.currentPage || p);
+      }
+      // Caso o backend retorne array simples
+      else if (Array.isArray(data)) {
+        const total = data.length;
+        const totalP = Math.ceil(total / limit);
+        const start = (p - 1) * limit;
+        const paged = data.slice(start, start + limit);
+        setSlides(paged);
+        setTotalPages(totalP);
+      } else {
+        setSlides(data.slides || []);
+      }
     } catch (err) {
-      setMensagem("Erro ao carregar dados.");
-      setSlides([]);
+      console.error("Erro ao carregar slides:", err);
+      setToast({ message: "Erro ao carregar slides", type: "error" });
     } finally {
-      setCarregando(false);
+      setLoading(false);
+      setTimeout(() => setToast({ message: "", type: "success" }), 3000);
     }
   }
 
-  async function cadastrarSlide(e) {
+  function handleChange(e) {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  }
+
+  async function handleSubmit(e) {
     e.preventDefault();
-    if (!assunto || !texto) {
-      setMensagem("Preencha todos os campos!");
-      return;
-    }
-
-    setMensagem("Cadastrando...");
-    const novoSlide = {
-      data: new Date().toISOString(),
-      assunto,
-      texto,
-      autor: autor || "Autor Teste"
-    };
-
     try {
-      const res = await fetch(`${API_URL}/`, {
+      const res = await fetch(`${API}/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(novoSlide)
+        body: JSON.stringify(form),
       });
+      const json = await res.json();
 
-      if (!res.ok) throw new Error("Erro ao cadastrar slide");
-
-      setAssunto("");
-      setTexto("");
-      setAutor("");
-      setMensagem("Slide cadastrado com sucesso!");
-      await carregarSlides();
+      if (json && json.success) {
+        setToast({ message: json.message || "Cadastrado com sucesso", type: "success" });
+        setForm({ data: "", assunto: "", texto: "", autor: "" });
+        carregarSlides(page);
+      } else {
+        setToast({ message: json.message || "Erro ao cadastrar", type: "error" });
+      }
     } catch (err) {
-      setMensagem("Erro ao cadastrar slide.");
+      console.error("Erro ao cadastrar:", err);
+      setToast({ message: "Erro ao cadastrar slide", type: "error" });
+    } finally {
+      setTimeout(() => setToast({ message: "", type: "success" }), 3000);
     }
   }
 
-  const slidesExibidos = mostrarTodos ? slides : slides.slice(0, 5);
-
-  // Funções para expandir/recolher textos
-  function isTextoLongo(texto) {
-    return texto.split('\n').length > 5;
-  }
-  function getTextoResumido(texto) {
-    return texto.split('\n').slice(0, 5).join('\n');
-  }
-  function toggleExpand(id) {
-    setExpandidos((prev) => ({ ...prev, [id]: !prev[id] }));
+  function toggleExpand(index) {
+    setSlides((prev) =>
+      prev.map((s, i) => (i === index ? { ...s, _expanded: !s._expanded } : s))
+    );
   }
 
   return (
     <div className="container">
-      <nav className="navbar">
-        <h1>Cadastro de Slides</h1>
-        <span>{new Date().toLocaleDateString("pt-BR")}</span>
-      </nav>
+      <Toast message={toast.message} type={toast.type} />
+      <h1>Cadastro de Slides</h1>
 
-      <form className="formulario" onSubmit={cadastrarSlide}>
+      <form className="form" onSubmit={handleSubmit}>
         <input
-          type="text"
+          name="data"
+          placeholder="Data (dd/mm/aaaa)"
+          value={form.data}
+          onChange={handleChange}
+          required
+        />
+        <input
+          name="assunto"
           placeholder="Assunto"
-          value={assunto}
-          onChange={(e) => setAssunto(e.target.value)}
+          value={form.assunto}
+          onChange={handleChange}
+          required
         />
         <textarea
+          name="texto"
           placeholder="Texto"
-          value={texto}
-          onChange={(e) => setTexto(e.target.value)}
+          rows={6}
+          value={form.texto}
+          onChange={handleChange}
+          required
         />
         <input
-          type="text"
+          name="autor"
           placeholder="Autor"
-          value={autor}
-          onChange={(e) => setAutor(e.target.value)}
+          value={form.autor}
+          onChange={handleChange}
+          required
         />
         <button type="submit">Cadastrar</button>
       </form>
 
-      {mensagem && <div className="msg">{mensagem}</div>}
+      <div className="list">
+        {loading && <p>Carregando...</p>}
+        {!loading && slides.length === 0 && <p>Nenhum slide encontrado.</p>}
 
-      <h2>Slides Cadastrados</h2>
-      <ul className="lista-slides">
-        {carregando ? (
-          <li className="empty">Carregando dados...</li>
-        ) : slidesExibidos.length === 0 ? (
-          <li className="empty">Nenhum slide cadastrado.</li>
-        ) : (
-          slidesExibidos.map((item) => (
-            <li key={item._id}>
-              <strong>{item.slide.assunto}</strong> <br />
-              {isTextoLongo(item.slide.texto) ? (
-                expandidos[item._id] ? (
-                  <>
-                    <pre style={{ whiteSpace: "pre-wrap" }}>{item.slide.texto}</pre>
-                    <a href="#" style={{color:'#1976d2'}} onClick={e => {e.preventDefault(); toggleExpand(item._id);}}>Ver menos</a>
-                  </>
-                ) : (
-                  <>
-                    <pre style={{ whiteSpace: "pre-wrap" }}>{getTextoResumido(item.slide.texto)}</pre>
-                    <a href="#" style={{color:'#1976d2'}} onClick={e => {e.preventDefault(); toggleExpand(item._id);}}>Ver mais</a>
-                  </>
-                )
-              ) : (
-                <pre style={{ whiteSpace: "pre-wrap" }}>{item.slide.texto}</pre>
+        {slides.map((s, idx) => {
+          const texto = s?.slide?.texto || "";
+          const linhas = texto.split(/\r?\n/);
+          const precisaVerMais = linhas.length > 5;
+          const expandido = !!s._expanded;
+          const textoExibido = precisaVerMais && !expandido ? linhas.slice(0, 5).join("\n") : texto;
+
+          return (
+            <div className="card" key={s._id ? s._id.$oid || s._id : idx}>
+              <div className="meta">
+                <strong>{s.slide.data}</strong> - {s.slide.assunto}
+              </div>
+              <pre className="texto">{textoExibido}</pre>
+
+              {precisaVerMais && (
+                <button className="link" onClick={() => toggleExpand(idx)}>
+                  {expandido ? "Ver menos" : "Ver mais"}
+                </button>
               )}
-              <small>
-                Autor: {item.slide.autor} | Data:{" "}
-                {item.slide.data
-                  ? new Date(item.slide.data).toLocaleString("pt-BR")
-                  : ""}
-              </small>
-            </li>
-          ))
-        )}
-      </ul>
 
-      {!carregando && slides.length > 5 && (
-        <button onClick={() => setMostrarTodos(!mostrarTodos)}>
-          {mostrarTodos ? "Ver menos" : "Ver mais"}
+              <div className="autor">Autor: {s.slide.autor}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="pagination">
+        <button disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+          Anterior
         </button>
-      )}
+        <span>
+          Página {page} de {totalPages}
+        </span>
+        <button disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>
+          Próximo
+        </button>
+      </div>
     </div>
   );
 }
